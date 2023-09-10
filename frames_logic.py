@@ -6,14 +6,28 @@ cur = con.cursor()
 
 def log_in_to_sign_up(event):
     """Función que cambia el frame de log_in al frame de sign_up"""
+    # Borramos los entrys del frame anterior
+
     frm_log_in.pack_forget()
     frm_sign_up.pack(fill="both")
+
+    entry_log_in_name.delete(0,len(entry_log_in_name.get()))
+    entry_log_in_pwd.delete(0,len(entry_log_in_pwd.get()))
+    
     return
 
 def sign_up_to_log_in(event):
     """Función que cambia el frame de sing_up al frame de log_in"""
+    # Borramos los entrys del frame anterior
+    
+
     frm_sign_up.pack_forget()
     frm_log_in.pack(fill="both")
+    
+    entry_sign_up_name.delete(0,len(entry_sign_up_name.get()))
+    entry_sign_up_pwd.delete(0,len(entry_sign_up_pwd.get()))
+    entry_sign_up_pwd_rep.delete(0,len(entry_sign_up_pwd_rep.get()))
+
     return
 
 def try_to_log_in(event):
@@ -25,8 +39,8 @@ def try_to_log_in(event):
     res = cur.execute("SELECT * from usuario where usuario = '" + name + "' and contraseña = '" + pwd + "'")
     if res.fetchall() == []:
         #Si no has encontrado al usuario, imprimes un mensaje de error
-        label_user_not_found_log_in.pack(side="top", after=log_in_button)
-        window.after(2000, delete_mssg, 0)
+        label_user_not_found_log_in.place(x=240,y=350)
+        window.after(2000, delete_mssg, label_user_not_found_log_in)
     else:
         #Si has encontrado al usuario, cambias al frame de loading
         frm_log_in.pack_forget()
@@ -39,18 +53,18 @@ def try_to_sign_up(event):
     name = entry_sign_up_name.get()
     if (len(name) == 0):
         #Si el nombre es una cadena vacía, dibujas un mensaje de error
-        delete_mssg(2)
+        delete_mssg(label_incorrect_sign_up_pwd)
         label_incorrect_sign_up_name.place(x=190, y=325)
-        window.after(3500, delete_mssg, 1)
+        window.after(3500, delete_mssg, label_incorrect_sign_up_name)
         return
     pwd = entry_sign_up_pwd.get()
     pwd_rep = entry_sign_up_pwd_rep.get()
     if (not pwd or not pwd_rep or pwd != pwd_rep):
 
         #Si las contraseñas no son válidas, dibujas el mensaje de error
-        delete_mssg(1)
+        delete_mssg(label_incorrect_sign_up_name)
         label_incorrect_sign_up_pwd.place(x=100, y=325)
-        window.after(3500, delete_mssg, 2)
+        window.after(3500, delete_mssg, label_incorrect_sign_up_pwd)
         return
     else:
         #Intentas insertar el dato nuevo, pero si ya está en la base de datos, te da un error
@@ -58,23 +72,19 @@ def try_to_sign_up(event):
             cur.execute("INSERT INTO usuario VALUES('" + name + "','" + pwd + "')")
             con.commit()
         except sql.IntegrityError:
-            delete_mssg(2)
+            delete_mssg(label_incorrect_sign_up_pwd)
             label_incorrect_sign_up_name.place(x=190, y=325)
-            window.after(3500, delete_mssg, 1)
+            window.after(3500, delete_mssg, label_incorrect_sign_up_name)
             return 
     #Una vez insertado el dato, pasas al frame de loading
     frm_sign_up.pack_forget()
     frm_loading.pack()
     return
 
-def delete_mssg(id: int):
+def delete_mssg(label):
     """Funcion que se encarga de borrar los mensajes de error"""
-    if id == 0:
-        label_user_not_found_log_in.pack_forget()
-    if id == 1:
-        label_incorrect_sign_up_name.place_forget()
-    if id == 2:
-        label_incorrect_sign_up_pwd.place_forget()
+    label.place_forget()
+
 
 #Ventana principal
 window = tk.Tk()
@@ -100,7 +110,7 @@ entry_log_in_name.pack(side="top")
 label_log_in_pwd = tk.Label(master=frm_log_in, text="Contraseña", fg="Blue", bg="#d3d3d0")
 label_log_in_pwd.pack(side="top")
 
-entry_log_in_pwd = tk.Entry(master=frm_log_in)
+entry_log_in_pwd = tk.Entry(master=frm_log_in, show= "*")
 entry_log_in_pwd.pack(side="top")
 
 log_in_button = tk.Button(
@@ -146,13 +156,13 @@ entry_sign_up_name.pack(side="top")
 label_sign_up_pwd = tk.Label(master=frm_sign_up, text="Introduce la contraseña", fg="Blue", bg="#D3D3D0")
 label_sign_up_pwd.pack()
 
-entry_sign_up_pwd = tk.Entry(master=frm_sign_up)
+entry_sign_up_pwd = tk.Entry(master=frm_sign_up,show = "*")
 entry_sign_up_pwd.pack(side="top")
 
 label_sign_up_pwd_rep = tk.Label(master=frm_sign_up, text="Vuelve a introducir la contraseña", fg="Blue", bg="#D3D3D0")
 label_sign_up_pwd_rep.pack()
 
-entry_sign_up_pwd_rep = tk.Entry(master=frm_sign_up)
+entry_sign_up_pwd_rep = tk.Entry(master=frm_sign_up,show = "*")
 entry_sign_up_pwd_rep.pack(side="top")
 
 try_to_sign_up_button = tk.Button(
