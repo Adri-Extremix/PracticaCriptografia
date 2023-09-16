@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
-
+from . import window
 window = tk.Tk()
 ###Frame historial
-frm_record = tk.Frame(master=window, width=500, height=500, bg="#d3d3d0")
+frm_record = tk.Frame(master=window.window, width=500, height=500, bg="#d3d3d0")
 frm_record.pack_propagate(0)
 frm_record.pack()
 
@@ -31,9 +31,3 @@ scroll_record.config(command=listbox_record.yview)
 
 scroll_record.pack(side=tk.RIGHT, fill=tk.Y)
 listbox_record.pack()
-
-for i in range(1, 5):
-    listbox_record.insert(tk.END, i)
-    
-frm_record.pack()
-window.mainloop()
