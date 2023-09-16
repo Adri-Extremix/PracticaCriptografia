@@ -16,8 +16,8 @@ cur.execute("CREATE TABLE operaciones (usuario TEXT, id NUMBER, dinero NUMBER, t
 
 cur.execute("INSERT INTO usuarios Values('a', 1)")
 cur.execute("INSERT INTO balance Values('a', 200)")
-cur.execute("INSERT INTO operaciones Values ('a', 1, 100, 'R', 10/09/2023, 'Cena')")
-cur.execute("INSERT INTO operaciones Values ('a', 2, 200, 'R', 10/09/2023, 'Cena')")
+cur.execute("INSERT INTO operaciones Values ('a', 1, 100, 'R', '10/09/2023', 'Cena')")
+cur.execute("INSERT INTO operaciones Values ('a', 2, 200, 'R', '10/09/2023', 'Cena')")
 con.commit()
 
 res = cur.execute("SELECT * from usuarios")

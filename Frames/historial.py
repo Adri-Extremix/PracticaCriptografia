@@ -1,11 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from . import window
-window = tk.Tk()
 ###Frame historial
 frm_record = tk.Frame(master=window.window, width=500, height=500, bg="#d3d3d0")
 frm_record.pack_propagate(0)
-frm_record.pack()
 
 #Título de la app y widgets del login
 label_record = tk.Label(master=frm_record, text="Historial de operaciones", fg="#000001", font=('Arial', 20, "bold"), bg="Blue")

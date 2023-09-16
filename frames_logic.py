@@ -1,15 +1,30 @@
 import tkinter as tk
 import sqlite3 as sql
+from datetime import datetime
 from random import randint
 from Frames.log_in import *
 from Frames.sign_up import *
 from Frames.loading import *
 from Frames.app import *
+from Frames.deposit_withdraw import *
+from Frames.historial import *
 from Frames.window import window
 
 con = sql.connect("base_de_datos.db")
 cur = con.cursor()
 # Variable global para 
+
+deposit_withdraw = None
+
+def calculate_date():
+    now = datetime.now()
+    day = now.day
+    if day < 10:
+        day = "0" + str(day)
+    month = now.month
+    if month < 10:
+        month = "0" + str(month)
+    return str(day) +"/"+ str(month) +"/"+ str(now.year)
 
 def loading_to_app():
 
@@ -60,10 +75,41 @@ def app_to_login(event):
     return
 
 def app_to_deposit(event):
-    pass
+    frm_app.pack_forget()
+    frm_deposit_withdraw.pack(fill="both")
+    label_title_deposit_withdraw.config(text = "Depositar")
+    deposit_withdraw = 0
 
 def app_to_withdraw(event):
-    pass
+    frm_app.pack_forget()
+    frm_deposit_withdraw.pack(fill="both")
+    label_title_deposit_withdraw.config(text = "Retirada")
+    deposit_withdraw = 1
+
+def app_to_record(event):
+
+    res = cur.execute("Select * from operaciones where usuario = '"+user_name+"'")
+    list = res.fetchall()
+    for row in list:
+        fila = "Fecha:" + str(row[4]) + " - Tipo:" + row[3] + " - Dinero:" + str(row[2]) + " - Concepto:" + row[5]
+        listbox_record.insert(tk.END,fila)
+    frm_app.forget()
+    frm_record.pack(fill="both")
+    return
+        
+def deposit_withdraw_to_app(event):
+    
+    entry_deposit_withdraw_money.delete(0,len(entry_deposit_withdraw_money.get()))
+    entry_deposit_withdraw_concept.delete(0,len(entry_deposit_withdraw_concept.get()))
+    calculate_balance()
+    frm_deposit_withdraw.forget()
+    frm_app.pack(fill = "both")
+
+def record_to_app(event):
+    listbox_record.delete(0,tk.END)
+    frm_record.pack_forget()
+    frm_app.pack(fill="both")
+    return
 
 def try_to_log_in(event):
     """Se encarga de gestionar el log in"""
@@ -126,15 +172,58 @@ def try_to_sign_up(event):
 
 def calculate_balance():
     res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
-    info = res.fetchall()
-    balance = info[0][1]
-    label_app_balance.config(text = str(balance))
+    balance = res.fetchall()[0][1]
+    if balance < 0:
+        color = "red"
+    else:
+        color = "green"
+    label_app_balance.config(text = str(balance)+ "€", fg = color)
     
-
 def delete_mssg(label):
     """Funcion que se encarga de borrar los mensajes de error"""
     label.place_forget()
 
+def insert_deposit_withdraw(event):
+
+    tipo = label_title_deposit_withdraw.cget("text")
+    money = entry_deposit_withdraw_money.get()
+    try:
+        money = int(money)
+    except:
+        delete_mssg(label_concept_invalid)
+        label_money_invalid.place(x=150, y=400)
+        window.after(3500, delete_mssg, label_money_invalid)
+        return
+    concept = entry_deposit_withdraw_concept.get()
+
+    if money < 0:
+        delete_mssg(label_concept_invalid)
+        label_money_invalid.place(x=150, y=400)
+        window.after(3500, delete_mssg, label_money_invalid)
+        return
+    
+    if len(concept) == 0:
+        delete_mssg(label_money_invalid)
+        label_concept_invalid.place(x=125, y=400)
+        window.after(3500, delete_mssg, label_concept_invalid)
+        return
+    res = cur.execute("Select Count(usuario) from operaciones where usuario = '"+ user_name +"'")
+    id = int(res.fetchall()[0][0])
+    id = id + 1
+    fecha = calculate_date()
+    cur.execute("Insert into operaciones values('" + user_name + "'," + str(id)+ "," + str(money) + ",'" + tipo[0:1] + "','" + fecha + "','" + concept + "')")
+    res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
+    balance = res.fetchall()[0][1]
+
+    if tipo == "Depositar":
+        balance = balance + money
+
+    elif tipo == "Retirada":
+        balance = balance - money
+
+    cur.execute("Update balance set balance = "+str(balance)+" where usuario ='" + user_name +"'")
+    con.commit()
+    deposit_withdraw_to_app(event)
 
 # Frames log in
 frm_log_in.pack(fill="both")
@@ -149,7 +238,13 @@ return_to_log_in.bind("<Button-1>", sign_up_to_log_in)
 app_close_button.bind("<Button-1>",app_to_login)
 app_deposit_button.bind("<Button-1>",app_to_deposit)
 app_withdraw_button.bind("<Button-1>",app_to_withdraw)
+app_record_button.bind("<Button-1>",app_to_record)
 
+# Frames deposit/withdraw
+deposit_withdraw_button.bind("<Button-1>",insert_deposit_withdraw)
+return_deposit_withdraw.bind("<Button-1>",deposit_withdraw_to_app)
 
+# Frames record
+record_close_button.bind("<Button-1>",record_to_app)
 #Mainloop
 tk.mainloop()
