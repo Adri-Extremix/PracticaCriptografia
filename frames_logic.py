@@ -59,6 +59,12 @@ def app_to_login(event):
     user_name = None
     return
 
+def app_to_deposit(event):
+    pass
+
+def app_to_withdraw(event):
+    pass
+
 def try_to_log_in(event):
     """Se encarga de gestionar el log in"""
     #Obtienes los datos de las entry
@@ -122,8 +128,8 @@ def calculate_balance():
     res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
     info = res.fetchall()
     balance = info[0][1]
-    label_app_balance = tk.Label(master=frm_app, text=str(balance), fg="#000001", font=('Arial', 20, "bold"), bg = "#D3D3D0")
-    label_app_balance.pack(side="top", pady=40, ipady=15, ipadx=250)
+    label_app_balance.config(text = str(balance))
+    
 
 def delete_mssg(label):
     """Funcion que se encarga de borrar los mensajes de error"""
@@ -141,6 +147,8 @@ return_to_log_in.bind("<Button-1>", sign_up_to_log_in)
 
 # Frames app
 app_close_button.bind("<Button-1>",app_to_login)
+app_deposit_button.bind("<Button-1>",app_to_deposit)
+app_withdraw_button.bind("<Button-1>",app_to_withdraw)
 
 
 #Mainloop

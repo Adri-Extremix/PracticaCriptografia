@@ -39,3 +39,8 @@ app_close_button = tk.Button(
     fg="red",
     )
 app_close_button.place(x=385,y= 10)
+
+app_operations_button = tk.Button(master = frm_app, text = "Historial", width= 10, height=2, bg = "white", fg = "red",)
+
+label_app_balance = tk.Label(master=frm_app, text="Placeholder", fg="#000001", font=('Arial', 20, "bold"), bg = "#D3D3D0")
+label_app_balance.pack(side="top", pady=40, ipady=15, ipadx=250)
