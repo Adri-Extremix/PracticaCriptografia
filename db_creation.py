@@ -11,13 +11,13 @@ cur.execute("DROP TABLE usuarios")
 
 cur.execute("CREATE TABLE usuarios (usuario TEXT, contraseña TEXT, PRIMARY KEY(usuario))")
 cur.execute("CREATE TABLE balance (usuario TEXT, balance NUMBER, PRIMARY KEY(usuario), FOREIGN KEY (usuario) references usuarios(usuario))")
-cur.execute("CREATE TABLE operaciones (usuario TEXT, id NUMBER, tipo TEXT, fecha DATE, concepto TEXT, PRIMARY KEY(usuario, id), FOREIGN KEY (usuario) references usuarios(usuario))")
+cur.execute("CREATE TABLE operaciones (usuario TEXT, id NUMBER, dinero NUMBER, tipo TEXT, fecha DATE, concepto TEXT, PRIMARY KEY(usuario, id), FOREIGN KEY (usuario) references usuarios(usuario))")
 
 
 cur.execute("INSERT INTO usuarios Values('a', 1)")
 cur.execute("INSERT INTO balance Values('a', 200)")
-cur.execute("INSERT INTO operaciones Values ('a', 1, 'R', 10/09/2023, 'Cena')")
-cur.execute("INSERT INTO operaciones Values ('a', 2, 'R', 10/09/2023, 'Cena')")
+cur.execute("INSERT INTO operaciones Values ('a', 1, 100, 'R', 10/09/2023, 'Cena')")
+cur.execute("INSERT INTO operaciones Values ('a', 2, 200, 'R', 10/09/2023, 'Cena')")
 con.commit()
 
 res = cur.execute("SELECT * from usuarios")
