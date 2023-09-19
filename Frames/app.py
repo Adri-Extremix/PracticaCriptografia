@@ -11,7 +11,7 @@ label_title.pack(side="top", pady=60, ipady=15, ipadx=250)
 
 app_deposit_button = tk.Button(
     master=frm_app, 
-    text="Ingreso",
+    text="Ingresar",
     width=10,
     height=2,
     bg="#4CBD49",
@@ -22,7 +22,7 @@ app_deposit_button.place(x=125, y = 400)
 
 app_withdraw_button = tk.Button(
     master=frm_app, 
-    text="Gasto",
+    text="Retirada",
     width=10,
     height=2,
     bg="red",

@@ -45,5 +45,6 @@ return_to_log_in = tk.Button(
 )
 return_to_log_in.place(x=125, y=400)
 label_incorrect_sign_up_name = tk.Label(master=frm_sign_up, text="Usuario no válido", fg="Red", bg = "#d3d3d0", font=("Arial", 10, "bold"))
-label_incorrect_sign_up_pwd = tk.Label(master=frm_sign_up, text="Las contraseñas no coinciden o no son válidas", fg="Red", bg = "#d3d3d0", font=("Arial", 10, "bold"))
-
+label_incorrect_sign_up_pwd = tk.Label(master=frm_sign_up, text="Las contraseñas no coinciden o no son válidas", fg="Red", bg = "#d3d3d0",
+font=("Arial", 10, "bold"))
+label_incorrect_pwd_len = tk.Label(master=frm_sign_up, text="La contraseña ha de tener más de 8 carácteres", fg="Red", bg = "#d3d3d0", font=("Arial", 10, "bold"))

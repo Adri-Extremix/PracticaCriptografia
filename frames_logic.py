@@ -77,7 +77,7 @@ def app_to_login(event):
 def app_to_deposit(event):
     frm_app.pack_forget()
     frm_deposit_withdraw.pack(fill="both")
-    label_title_deposit_withdraw.config(text = "Depositar")
+    label_title_deposit_withdraw.config(text = "Ingresar")
     deposit_withdraw = 0
 
 def app_to_withdraw(event):
@@ -88,7 +88,7 @@ def app_to_withdraw(event):
 
 def app_to_record(event):
 
-    res = cur.execute("Select * from operaciones where usuario = '"+user_name+"'")
+    res = cur.execute("Select * from operaciones where usuario = '"+user_name+"' order by id desc")
     list = res.fetchall()
     for row in list:
         fila = "Fecha:" + str(row[4]) + " - Tipo:" + row[3] + " - Dinero:" + str(row[2]) + " - Concepto:" + row[5]
@@ -139,15 +139,22 @@ def try_to_sign_up(event):
     if (len(name) == 0):
         #Si el nombre es una cadena vacía, dibujas un mensaje de error
         delete_mssg(label_incorrect_sign_up_pwd)
+        delete_mssg(label_incorrect_pwd_len)
         label_incorrect_sign_up_name.place(x=190, y=325)
         window.after(3500, delete_mssg, label_incorrect_sign_up_name)
         return
     pwd = entry_sign_up_pwd.get()
     pwd_rep = entry_sign_up_pwd_rep.get()
-    if (not pwd or not pwd_rep or pwd != pwd_rep):
-
+    if (len(pwd) < 8):
+    	delete_mssg(label_incorrect_sign_up_name)
+    	delete_mssg(label_incorrect_sign_up_pwd)
+    	label_incorrect_pwd_len.place(x=100, y=325)
+    	window.after(3500, delete_mssg, label_incorrect_pwd_len)
+    	return
+    if (pwd != pwd_rep):
         #Si las contraseñas no son válidas, dibujas el mensaje de error
         delete_mssg(label_incorrect_sign_up_name)
+        delete_mssg(label_incorrect_pwd_len)
         label_incorrect_sign_up_pwd.place(x=100, y=325)
         window.after(3500, delete_mssg, label_incorrect_sign_up_pwd)
         return
@@ -215,7 +222,7 @@ def insert_deposit_withdraw(event):
     res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
     balance = res.fetchall()[0][1]
 
-    if tipo == "Depositar":
+    if tipo == "Ingresar":
         balance = balance + money
 
     elif tipo == "Retirada":
