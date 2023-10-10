@@ -88,18 +88,21 @@ def app_to_withdraw(event):
     deposit_withdraw = 1
 
 def app_to_record(event):
-
-    res = cur.execute("Select * from operaciones where usuario = ? order by id desc", (user_name,))
-    list = res.fetchall()
-    for row in list:
-        fila = "Fecha:" + str(row[4]) + " - Tipo:" + row[3] + " - Dinero:" + str(row[2]) + " - Concepto:" + row[5]
+    res = cur.execute("""Select dinero, dinero_nonce, tipo, tipo_nonce, concepto, concepto_nonce, fecha 
+    					from operaciones where usuario = ? order by id desc", (user_name,)""")
+    lista = res.fetchall()
+    lista_dev = []
+    for i in range(3):
+    	list_dev.append(desencriptado_autenticado(lista[2*i], lista[2*i + 1], user_key))
+    lista_dev.append(fecha)
+    for row in lista_dev:
+        fila = "Fecha:" + str(row[3]) + " - Tipo:" + row[1] + " - Dinero:" + str(row[0]) + " - Concepto:" + row[2]
         listbox_record.insert(tk.END,fila)
     frm_app.forget()
     frm_record.pack(fill="both")
     return
         
 def deposit_withdraw_to_app(event):
-    
     entry_deposit_withdraw_money.delete(0,len(entry_deposit_withdraw_money.get()))
     entry_deposit_withdraw_concept.delete(0,len(entry_deposit_withdraw_concept.get()))
     calculate_balance()
@@ -118,7 +121,7 @@ def try_to_log_in(event):
     name = entry_log_in_name.get()
     pwd = entry_log_in_pwd.get()
     #Buscas en la base de datos al usuario con esa contraseña
-    cur.execute("SELECT pwd_token, salt from usuarios where usuario = ?", (name,))
+    cur.execute("SELECT pwd_token, salt_token, salt_dev from usuarios where usuario = ?", (name,))
     res = cur.fetchall()
     if res == []:
         #Si no has encontrado al usuario, imprimes un mensaje de error
@@ -137,7 +140,9 @@ def try_to_log_in(event):
         frm_loading.pack()
         window.after(randint(500,1500), loading_to_app)
         global user_name
+        global user_key
         user_name = name
+        user_key = derivar_key(pwd, res[0][2])
     return name
 
 def try_to_sign_up(event):
@@ -169,9 +174,11 @@ def try_to_sign_up(event):
     else:
         #Intentas insertar el dato nuevo, pero si ya está en la base de datos, te da un error
         try:
-            salt, pwd_token = guarrear(pwd)
-            cur.execute("INSERT INTO usuarios VALUES(?, ?, ?)", (name, pwd_token, salt))
-            cur.execute("INSERT INTO balance VALUES(?,0)", (name,))
+            salt_token, pwd_token = guarrear(pwd)
+            key_dev, salt_dev = derivar_key_sign_up(pwd)
+            cur.execute("INSERT INTO usuarios VALUES(?, ?, ?, ?)", (name, pwd_token, salt_token, salt_dev))
+            balance, balance_nonce = encriptado_autenticado("0", key_dev)
+            cur.execute("INSERT INTO balance VALUES(?,?,?)", (name, balance, balance_nonce,))
             con.commit()
         except sql.IntegrityError:
             delete_mssg(label_incorrect_sign_up_pwd)
@@ -181,20 +188,23 @@ def try_to_sign_up(event):
             return 
     #Una vez insertado el dato, pasas al frame de loading
     global user_name
+    global user_key
     user_name = name
+    user_key = key_dev
     frm_sign_up.pack_forget()
     frm_loading.pack()
     window.after(randint(500,1500), loading_to_app)
     return
 
 def calculate_balance():
-    res = cur.execute("Select * from balance where usuario = ?", (user_name,))
-    balance = res.fetchall()[0][1]
-    if balance < 0:
+    res = cur.execute("Select balance, balance_nonce from balance where usuario = ?", (user_name,))
+    resultado = res.fetchall()
+    balance = desencriptado_autenticado(resultado[0][0], resultado[0][1], key_dev)
+    if int(balance) < 0:
         color = "red"
     else:
         color = "green"
-    label_app_balance.config(text = str(balance), fg = color)
+    label_app_balance.config(text = balance, fg = color)
     
 def delete_mssg(label):
     """Funcion que se encarga de borrar los mensajes de error"""
@@ -228,17 +238,20 @@ def insert_deposit_withdraw(event):
     id = int(res.fetchall()[0][0])
     id = id + 1
     fecha = calculate_date()
-    cur.execute("Insert into operaciones values(?, ?, ?, ?, ?, ?)", (user_name, str(id), money, tipo[0:1], fecha, concept,))
-    res = cur.execute("Select * from balance where usuario = ?", (user_name,))
-    balance = res.fetchall()[0][1]
-
+    money, money_nonce = encriptado_autenticado(str(money), user_key)
+    tipo, tipo_nonce = encriptado_autenticado(tipo[0:1], user_key)
+    concept, concept_nonce = encriptado_autenticado(concept, user_key)
+    cur.execute("Insert into operaciones values(?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+    (user_name, str(id), fecha, money, money_nonce, tipo, tipo_nonce, concept, concept_nonce))
+    res = cur.execute("Select balance, balance_nonce from balance where usuario = ?", (user_name,))
+    resultado = res.fetchall()
+	balance = int(desencriptado_autenticado(resultado[0][0], resultado[0][1], user_key))
     if tipo == "Ingresar":
         balance = balance + money
-
     elif tipo == "Retirada":
         balance = balance - money
-
-    cur.execute("Update balance set balance = ? where usuario = ?", (str(balance), user_name))
+    balance, balance_nonce = encriptado_autenticado(str(balance), user_key)
+    cur.execute("Update balance set balance = ?, balance_nonce = ? where usuario = ?", (balance, balance_nonce, user_name))
     con.commit()
     deposit_withdraw_to_app(event)
 
