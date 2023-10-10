@@ -1,8 +1,6 @@
 import tkinter as tk
 import sqlite3 as sql
 from datetime import datetime
-import os
-from criptografia import guarrear, verificar
 from random import randint
 from Frames.log_in import *
 from Frames.sign_up import *
@@ -12,9 +10,10 @@ from Frames.deposit_withdraw import *
 from Frames.historial import *
 from Frames.window import window
 
-con = sql.connect("base_de_datos.db")
+con = sql.connect("PracticaCriptografia-main/base_de_datos.db")
 cur = con.cursor()
-# Variable global para 
+
+# Variable global 
 deposit_withdraw = None
 
 def calculate_date():
@@ -89,7 +88,7 @@ def app_to_withdraw(event):
 
 def app_to_record(event):
 
-    res = cur.execute("Select * from operaciones where usuario = ? order by id desc", (user_name,))
+    res = cur.execute("Select * from operaciones where usuario = '"+user_name+"' order by id desc")
     list = res.fetchall()
     for row in list:
         fila = "Fecha:" + str(row[4]) + " - Tipo:" + row[3] + " - Dinero:" + str(row[2]) + " - Concepto:" + row[5]
@@ -118,21 +117,14 @@ def try_to_log_in(event):
     name = entry_log_in_name.get()
     pwd = entry_log_in_pwd.get()
     #Buscas en la base de datos al usuario con esa contraseña
-    cur.execute("SELECT pwd_token, salt from usuarios where usuario = ?", (name,))
-    res = cur.fetchall()
-    if res == []:
+    res = cur.execute("SELECT * from usuarios where usuario = '" + name + "' and contraseña = '" + pwd + "'")
+    if res.fetchall() == []:
         #Si no has encontrado al usuario, imprimes un mensaje de error
         label_user_not_found_log_in.place(x=240,y=350)
         window.after(2000, delete_mssg, label_user_not_found_log_in)
         return 
     else:
-        try: 
-            verificar(pwd, res[0][0], res[0][1])
-        except:
-            label_user_not_found_log_in.place(x=240, y=350)
-            window.after(2000, delete_mssg, label_user_not_found_log_in)
-            return
-            #Si has encontrado al usuario, cambias al frame de loading
+        #Si has encontrado al usuario, cambias al frame de loading
         frm_log_in.pack_forget()
         frm_loading.pack()
         window.after(randint(500,1500), loading_to_app)
@@ -154,11 +146,11 @@ def try_to_sign_up(event):
     pwd = entry_sign_up_pwd.get()
     pwd_rep = entry_sign_up_pwd_rep.get()
     if (len(pwd) < 8):
-        delete_mssg(label_incorrect_sign_up_name)
-        delete_mssg(label_incorrect_sign_up_pwd)
-        label_incorrect_pwd_len.place(x=100, y=325)
-        window.after(3500, delete_mssg, label_incorrect_pwd_len)
-        return
+    	delete_mssg(label_incorrect_sign_up_name)
+    	delete_mssg(label_incorrect_sign_up_pwd)
+    	label_incorrect_pwd_len.place(x=100, y=325)
+    	window.after(3500, delete_mssg, label_incorrect_pwd_len)
+    	return
     if (pwd != pwd_rep):
         #Si las contraseñas no son válidas, dibujas el mensaje de error
         delete_mssg(label_incorrect_sign_up_name)
@@ -169,13 +161,11 @@ def try_to_sign_up(event):
     else:
         #Intentas insertar el dato nuevo, pero si ya está en la base de datos, te da un error
         try:
-            salt, pwd_token = guarrear(pwd)
-            cur.execute("INSERT INTO usuarios VALUES(?, ?, ?)", (name, pwd_token, salt))
-            cur.execute("INSERT INTO balance VALUES(?,0)", (name,))
+            cur.execute("INSERT INTO usuarios VALUES('" + name + "','" + pwd + "')")
+            cur.execute("INSERT INTO balance VALUES('" + name + "',0)")
             con.commit()
         except sql.IntegrityError:
             delete_mssg(label_incorrect_sign_up_pwd)
-            delete_mssg(label_incorrect_pwd_len)
             label_incorrect_sign_up_name.place(x=190, y=325)
             window.after(3500, delete_mssg, label_incorrect_sign_up_name)
             return 
@@ -188,13 +178,13 @@ def try_to_sign_up(event):
     return
 
 def calculate_balance():
-    res = cur.execute("Select * from balance where usuario = ?", (user_name,))
+    res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
     balance = res.fetchall()[0][1]
     if balance < 0:
         color = "red"
     else:
         color = "green"
-    label_app_balance.config(text = str(balance), fg = color)
+    label_app_balance.config(text = str(balance)+ "€", fg = color)
     
 def delete_mssg(label):
     """Funcion que se encarga de borrar los mensajes de error"""
@@ -224,12 +214,12 @@ def insert_deposit_withdraw(event):
         label_concept_invalid.place(x=125, y=400)
         window.after(3500, delete_mssg, label_concept_invalid)
         return
-    res = cur.execute("Select Count(usuario) from operaciones where usuario = ?", (user_name,))
+    res = cur.execute("Select Count(usuario) from operaciones where usuario = '"+ user_name +"'")
     id = int(res.fetchall()[0][0])
     id = id + 1
     fecha = calculate_date()
-    cur.execute("Insert into operaciones values(?, ?, ?, ?, ?, ?)", (user_name, str(id), money, tipo[0:1], fecha, concept,))
-    res = cur.execute("Select * from balance where usuario = ?", (user_name,))
+    cur.execute("Insert into operaciones values('" + user_name + "'," + str(id)+ "," + str(money) + ",'" + tipo[0:1] + "','" + fecha + "','" + concept + "')")
+    res = cur.execute("Select * from balance where usuario = '" + user_name + "'")
     balance = res.fetchall()[0][1]
 
     if tipo == "Ingresar":
@@ -238,7 +228,7 @@ def insert_deposit_withdraw(event):
     elif tipo == "Retirada":
         balance = balance - money
 
-    cur.execute("Update balance set balance = ? where usuario = ?", (str(balance), user_name))
+    cur.execute("Update balance set balance = "+str(balance)+" where usuario ='" + user_name +"'")
     con.commit()
     deposit_withdraw_to_app(event)
 
