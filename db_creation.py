@@ -24,12 +24,12 @@ cur.execute("""CREATE TABLE balance (usuario TEXT,
 cur.execute("""CREATE TABLE operaciones (usuario TEXT, 
 										 id NUMBER, 
 										 fecha DATE, 
-										 dinero NUMBER, dinero_nonce NUMBER,
+										 dinero TEXT, dinero_nonce NUMBER,
 										 tipo TEXT, tipo_nonce NUMBER,
 										 concepto TEXT, concepto_nonce NUMBER,
 										 PRIMARY KEY(usuario, id), 
-										 FOREIGN KEY (usuario) references usuarios(usuario))")
-"""   
+										 FOREIGN KEY (usuario) references usuarios(usuario))""")
+
 """ 
 cur.execute("INSERT INTO usuarios Values('a', 1)")
 cur.execute("INSERT INTO balance Values('a', 200)")

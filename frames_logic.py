@@ -2,7 +2,7 @@ import tkinter as tk
 import sqlite3 as sql
 from datetime import datetime
 import os
-from criptografia import guarrear, verificar
+from criptografia import guarrear, verificar, derivar_key, derivar_key_sign_up, encriptado_autenticado, desencriptado_autenticado
 from random import randint
 from Frames.log_in import *
 from Frames.sign_up import *
@@ -89,12 +89,16 @@ def app_to_withdraw(event):
 
 def app_to_record(event):
     res = cur.execute("""Select dinero, dinero_nonce, tipo, tipo_nonce, concepto, concepto_nonce, fecha 
-    					from operaciones where usuario = ? order by id desc", (user_name,)""")
+    					from operaciones where usuario = ? order by id desc""", (user_name,))
     lista = res.fetchall()
     lista_dev = []
-    for i in range(3):
-    	list_dev.append(desencriptado_autenticado(lista[2*i], lista[2*i + 1], user_key))
-    lista_dev.append(fecha)
+    for j in range(len(lista)):
+        row = []
+        for i in range(3):
+            row.append(desencriptado_autenticado(lista[j][2*i], lista[j][2*i + 1], user_key_dev))
+    # Append de la fecha
+        row.append(lista[j][6])
+        lista_dev.append(row)
     for row in lista_dev:
         fila = "Fecha:" + str(row[3]) + " - Tipo:" + row[1] + " - Dinero:" + str(row[0]) + " - Concepto:" + row[2]
         listbox_record.insert(tk.END,fila)
@@ -140,9 +144,9 @@ def try_to_log_in(event):
         frm_loading.pack()
         window.after(randint(500,1500), loading_to_app)
         global user_name
-        global user_key
+        global user_key_dev
         user_name = name
-        user_key = derivar_key(pwd, res[0][2])
+        user_key_dev = derivar_key(pwd, res[0][2])
     return name
 
 def try_to_sign_up(event):
@@ -188,9 +192,9 @@ def try_to_sign_up(event):
             return 
     #Una vez insertado el dato, pasas al frame de loading
     global user_name
-    global user_key
+    global user_key_dev
     user_name = name
-    user_key = key_dev
+    user_key_dev = key_dev
     frm_sign_up.pack_forget()
     frm_loading.pack()
     window.after(randint(500,1500), loading_to_app)
@@ -199,7 +203,7 @@ def try_to_sign_up(event):
 def calculate_balance():
     res = cur.execute("Select balance, balance_nonce from balance where usuario = ?", (user_name,))
     resultado = res.fetchall()
-    balance = desencriptado_autenticado(resultado[0][0], resultado[0][1], key_dev)
+    balance = desencriptado_autenticado(resultado[0][0], resultado[0][1], user_key_dev)
     if int(balance) < 0:
         color = "red"
     else:
@@ -238,19 +242,19 @@ def insert_deposit_withdraw(event):
     id = int(res.fetchall()[0][0])
     id = id + 1
     fecha = calculate_date()
-    money, money_nonce = encriptado_autenticado(str(money), user_key)
-    tipo, tipo_nonce = encriptado_autenticado(tipo[0:1], user_key)
-    concept, concept_nonce = encriptado_autenticado(concept, user_key)
+    money_encrypt, money_nonce = encriptado_autenticado(str(money), user_key_dev)
+    tipo_encrypt, tipo_nonce = encriptado_autenticado(tipo[0:1], user_key_dev)
+    concept_encrypt, concept_nonce = encriptado_autenticado(concept, user_key_dev)
     cur.execute("Insert into operaciones values(?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-    (user_name, str(id), fecha, money, money_nonce, tipo, tipo_nonce, concept, concept_nonce))
+    (user_name, str(id), fecha, money_encrypt, money_nonce, tipo_encrypt, tipo_nonce, concept_encrypt, concept_nonce))
     res = cur.execute("Select balance, balance_nonce from balance where usuario = ?", (user_name,))
     resultado = res.fetchall()
-	balance = int(desencriptado_autenticado(resultado[0][0], resultado[0][1], user_key))
+    balance = int(desencriptado_autenticado(resultado[0][0], resultado[0][1], user_key_dev))
     if tipo == "Ingresar":
         balance = balance + money
     elif tipo == "Retirada":
         balance = balance - money
-    balance, balance_nonce = encriptado_autenticado(str(balance), user_key)
+    balance, balance_nonce = encriptado_autenticado(str(balance), user_key_dev)
     cur.execute("Update balance set balance = ?, balance_nonce = ? where usuario = ?", (balance, balance_nonce, user_name))
     con.commit()
     deposit_withdraw_to_app(event)
