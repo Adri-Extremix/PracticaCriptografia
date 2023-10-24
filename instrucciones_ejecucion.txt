@@ -1,0 +1,4 @@
+Instrucciones para ejecutar BANKI:
+	1- Instalar los paquetes de requirements.txt en un entorno virtual o en local. Para ello, ejecuta el comando pip install -r requirements.txt en una terminal. 
+	2- Si tienes una instancia de la base de datos creada (base_de_datos.db) pasa al paso 3. Si no la tienes creada, ejecuta el comando "python3 db_creation.py" o ejecuta el archivo db_creation.py en un IDE.
+	3- Para usar la aplicación, ejecuta el comando "python3 frames_logic.py" o ejecuta el archivo frames_logic.py en un IDE.
