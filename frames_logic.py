@@ -3,7 +3,7 @@ import tkinter as tk
 import sqlite3 as sql
 from datetime import datetime
 import os
-from criptografia import guarrear, verificar, derivar_key, derivar_key_sign_up, encriptado_autenticado, desencriptado_autenticado
+from criptografia import *
 from random import randint
 from Frames.log_in import *
 from Frames.sign_up import *
@@ -134,7 +134,7 @@ def app_to_record(event):
 		row.append(lista[j][6])
 		#Guardas la operacion en lista_dev
 		lista_dev.append(row)
-
+	
 	#For que sirve para guardar las operaciones desencriptadas en un listbox, y que se muestre por pantalla
 	for row in lista_dev:
 		fila = "Fecha:" + str(row[3]) + " - Tipo:" + row[1] + " - Dinero:" + str(row[0]) + " - Concepto:" + row[2]
@@ -267,6 +267,12 @@ def try_to_sign_up(event):
 	window.after(randint(500,1500), loading_to_app)
 	return
 
+def try_to_sign_element(event):
+	indice = listbox_record.curselection()
+	if (len(indice) != 0):
+		firmar(listbox_record.get(indice[0]))
+	return
+
 def calculate_balance():
 	"""Función que sirve para dibujar el balance"""
 	#Obtiene el balance encriptado
@@ -351,7 +357,6 @@ def insert_deposit_withdraw(event):
 
 
 """Bindeo de botones a las funciones"""
-
 # Frames log in
 frm_log_in.pack(fill="both")
 log_in_button.bind("<Button-1>", try_to_log_in)
@@ -373,5 +378,6 @@ return_deposit_withdraw.bind("<Button-1>",deposit_withdraw_to_app)
 
 # Frames record
 record_close_button.bind("<Button-1>",record_to_app)
+record_sign_button.bind("<Button-1>", try_to_sign_element)
 #Mainloop
 tk.mainloop()

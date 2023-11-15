@@ -21,6 +21,17 @@ record_close_button = tk.Button(
 
 record_close_button.place(x=385, y = 10)
 
+record_sign_button = tk.Button(
+	master=frm_record,
+	text="Firmar",
+	width=10,
+	height=2,
+	bg="white",
+	fg="blue",
+)
+
+record_sign_button.place(x=90, y=130)
+
 listbox_record = tk.Listbox()
 
 scroll_record = ttk.Scrollbar(master=frm_record, orient=tk.VERTICAL)
