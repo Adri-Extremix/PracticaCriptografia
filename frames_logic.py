@@ -121,7 +121,7 @@ def app_to_withdraw(event):
 def app_to_record(event):
 	"""Función que cambia el frame de app al de historial"""
 	#Obtienes las operaciones del usuario y las guardas en una lista
-	res = cur.execute("""Select dinero, dinero_nonce, tipo, tipo_nonce, concepto, concepto_nonce, fecha 
+	res = cur.execute("""Select dinero, dinero_nonce, tipo, tipo_nonce, concepto, concepto_nonce, fecha, id 
 						from operaciones where usuario = ? order by id desc""", (user_name,))
 	lista = res.fetchall()
 	#Usas lista_dev para guardar los valores desencriptados
@@ -130,15 +130,16 @@ def app_to_record(event):
 		row = []
 		for i in range(3):
 			#Llamas a desencriptado_autenticado para desencriptar las operaciones del usuario
-		    row.append(desencriptado_autenticado(lista[j][2*i], lista[j][2*i + 1], user_key_dev))
+			row.append(desencriptado_autenticado(lista[j][2*i], lista[j][2*i + 1], user_key_dev))
 		#Append de la fecha que nunca está encriptada
 		row.append(lista[j][6])
+		row.append(lista[j][7])
 		#Guardas la operacion en lista_dev
 		lista_dev.append(row)
 	
 	#For que sirve para guardar las operaciones desencriptadas en un listbox, y que se muestre por pantalla
 	for row in lista_dev:
-		fila = "Fecha:" + str(row[3]) + " - Tipo:" + row[1] + " - Dinero:" + str(row[0]) + " - Concepto:" + row[2]
+		fila = str(row[4]) + ": Fecha:" + str(row[3]) + " - Tipo:" + row[1] + " - Dinero:" + str(row[0]) + " - Concepto:" + row[2]
 		listbox_record.insert(tk.END,fila)
 
 	#Una vez que se desencriptan las operaciones, dibuja el nuevo frame
@@ -240,21 +241,21 @@ def try_to_sign_up(event):
 		#Intenta insertar el dato nuevo, pero si ya está en la base de datos, da un error
 		try:
 			#Obtiene la contraseña derivada y el salt con el que se ha derivado
-		    salt_token, pwd_token = guarrear(pwd)
+			salt_token, pwd_token = guarrear(pwd)
 		    #Obtiene la contraseña para desencriptar los datos y el salt
-		    key_dev, salt_dev = derivar_key_sign_up(pwd)    
+			key_dev, salt_dev = derivar_key_sign_up(pwd)    
 		    #Se guardan los datos en la base de datos, encriptando el balance del nuevo usuario
-		    cur.execute("INSERT INTO usuarios VALUES(?, ?, ?, ?)", (name, pwd_token, salt_token, salt_dev))
-		    balance, balance_nonce = encriptado_autenticado("0", key_dev)
-		    cur.execute("INSERT INTO balance VALUES(?,?,?)", (name, balance, balance_nonce,))
-		    con.commit()
+			cur.execute("INSERT INTO usuarios VALUES(?, ?, ?, ?)", (name, pwd_token, salt_token, salt_dev))
+			balance, balance_nonce = encriptado_autenticado("0", key_dev)
+			cur.execute("INSERT INTO balance VALUES(?,?,?)", (name, balance, balance_nonce,))
+			con.commit()
 		except sql.IntegrityError:
 			#Si da un mensaje de error de integridad, significa que el nombre de usuario ya está elegido, por lo que se dibuja un mensaje de error
-		    delete_mssg(label_incorrect_sign_up_pwd)
-		    delete_mssg(label_incorrect_pwd_len)
-		    label_incorrect_sign_up_name.place(x=190, y=325)
-		    window.after(3500, delete_mssg, label_incorrect_sign_up_name)
-		    return 
+			delete_mssg(label_incorrect_sign_up_pwd)
+			delete_mssg(label_incorrect_pwd_len)
+			label_incorrect_sign_up_name.place(x=190, y=325)
+			window.after(3500, delete_mssg, label_incorrect_sign_up_name)
+			return 
 	#Guarda el nombre del usuario y su contraseña de desencriptado 
 	global user_name
 	global user_key_dev
@@ -353,15 +354,18 @@ def insert_deposit_withdraw(event):
 def try_to_sign_element(event):
 	indice = listbox_record.curselection()
 	if (len(indice) != 0):
-		firmar(listbox_record.get(indice[0]))
+		op = listbox_record.get(indice[0])
+		index = op.index(':')
+		firmar(op, op[0:index], user_name, os.getenv("PASSWORD_FIRMA"))
 	return
 
 def abrir_explorador(event):
 	archivo_seleccionado = filedialog.askopenfilename(
 		title = "Elige el archivo a verificar",
-		filetypes=[("Archivos pem", ".pem")]
+		filetypes=[("Archivos json", ".json")]
 	)
-	return
+	print(verify_bill(archivo_seleccionado))
+	return 
 
 """Bindeo de botones a las funciones"""
 # Frames log in

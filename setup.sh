@@ -1,3 +1,3 @@
 #!/bin/sh
 export PASSWORD_FIRMA=ManAdrian
-python3 frames_logic.py
+python3 Setup_PKI.py

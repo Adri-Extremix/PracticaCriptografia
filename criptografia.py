@@ -1,5 +1,9 @@
 import os
 import base64
+import json
+
+from cryptography import x509
+from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -62,10 +66,6 @@ def derivar_key_sign_up(pwd):
     return key,salt_final
 
 def derivar_key(pwd,salt):
-
-    
-
-
     bytes_b64_salt = bytes(salt, 'ascii')
     bytes_salt = base64.b64decode(bytes_b64_salt)
 
@@ -112,63 +112,101 @@ def desencriptado_autenticado(ct,nonce,key):
 
     return data
 
-def generate_private_key():
-	private_key = rsa.generate_private_key(
-		public_exponent=65537,
-		key_size=2048,
-	)
-	return private_key
-    
-def serialize_private_key(private_key):
-	#key = AAAAAAAAAAAAAAAAAAHHHHHHHHHHHH 
-	pem = private_key.private_bytes(
-		encoding=serialization.Encodign.PEM,
-		format=serialization.PrivateFormat.PKCS8,
-		encryption_algoritm=serialization.BestAvailableEncryption(b'mierdapvta')
-	) 
-	pem.splitlines()[0]
-	return
-    
-def serialize_public_key(private_key):
-	publick_key = private_key.public_key()
-	pem = public_key.public_bytes(
-    	encoding=serialization.Encoding.PEM,
-    	formar=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-	pem.splitlines()[0]
-	return
-    
-def get_serialized_key(pwd=None):
-	with open("path", "rb") as key_file:
+
+def get_serialized_key(path,pwd=None):
+	with open(path, "rb") as key_file:
 		private_key = serialization.load_pem_private_key(
 			key_file.read(),
-			password=pwd,
+			password=bytes(pwd, 'ascii'),
 		)
-	return
+	return private_key
     
-def firmar(operacion, private_key):
+def firmar(operacion, id, usuario, pass_firma):
+	private_key = get_serialized_key("PKI1/Banki/BankiKey.pem",pass_firma)
+	operacion = usuario + " - " + operacion 
 	op_bytes = bytes(operacion, 'ascii')
-	signature = private_key.private_key.sign(
+	signature = private_key.sign(
 		op_bytes,
 		padding.PSS(
 			mgf=padding.MGF1(hashes.SHA256()),
-			salt_length=padding.PSS_MAX_LENGTH
+			salt_length=padding.PSS.MAX_LENGTH
 		),
 		hashes.SHA256()
 	)
-	return
+	firma_64 = base64.b64encode(signature)
+	firma = firma_64.decode('ascii')
+	with open("recibos/operacion-" + id + ".json", "w", encoding='ascii') as file:
+		message = {
+			"mensaje": operacion,
+            "firma": firma,
+			"certificado": "PKI1/Banki/BankiCert.pem",
+			"cadena_certificacion": "PKI1/Banki/certs.pem" 
+        }
+		json.dump(message, file)
 
-def verify_sign(private_key, operation):
-	public_key = private_key.public_key()
-	op_bytes = bytes(operation, 'ascii')
-	public_key.verify(
-		signature,
-		op_bytes,
-		padding.PSS(
-			mgf=padding.MGF1(hashes.SHA256),
-			salt_length=padding.PSS_MAX_LENGTH
-		),
-		hashes.SHA256()
-	)
-	return 
+
+def verify_sign(public_key,operation,firma):
+	try:	
+		public_key.verify(
+			firma,
+			operation,
+			padding.PSS(
+				mgf=padding.MGF1(hashes.SHA256()),
+				salt_length=padding.PSS.MAX_LENGTH
+			),
+			hashes.SHA256()
+		)
+		return 0
+	except:
+		return -1
+
+def verify_bill(path):
+	with open(path,"rb") as file:
+		data = json.load(file)
+	with open(data["certificado"],"rb") as file:
+		cert_banki = x509.load_pem_x509_certificate(file.read())
+	with open(data["cadena_certificacion"],"rb") as file:
+		cert_chain = x509.load_pem_x509_certificates(file.read())
 	
+
+	firma_b64 = bytes((data["firma"]), 'ascii')
+	firma_bytes = base64.b64decode(firma_b64)
+
+	if verify_sign(cert_banki.public_key(),bytes(data["mensaje"], 'ascii'),firma_bytes) == -1:
+		return -1
+	
+	print(cert_chain[0].public_key())
+	return 0
+	
+	if verify_sign(cert_chain[0].public_key(),cert_banki.tbs_certificate_bytes, cert_banki.signature) == -1:
+		print("No verifico el certificado de Banki")
+		#return -1
+	
+	if verify_sign(cert_chain[0].public_key(),cert_chain[0].tbs_certificate_bytes, cert_chain[0].signature) == -1:
+		print("No verifico la raiz")
+		return -1
+	return 0
+
+
+
+
+
+
+	return 0 
+	indice = 0;
+	cert = cert_banki
+	print(cert.public_key())
+	cert_next = cert_chain[indice]
+	print(cert_next.public_key())
+	while (1):
+		if verify_sign(cert_next.public_key(), cert.tbs_certificate_bytes, cert.signature) == -1:
+			print(indice)
+			return -1
+		if (cert.issuer == cert.subject):
+			return 0
+		if (cert_next.issuer == cert_next.subject):
+			cert = cert_next
+		else: 
+			cert = cert_next
+			indice += 1
+			cert_next = cert_chain[indice]
