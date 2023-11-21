@@ -127,11 +127,8 @@ def firmar(operacion, id, usuario, pass_firma):
 	op_bytes = bytes(operacion, 'ascii')
 	signature = private_key.sign(
 		op_bytes,
-		padding.PSS(
-			mgf=padding.MGF1(hashes.SHA256()),
-			salt_length=padding.PSS.MAX_LENGTH
-		),
-		hashes.SHA256()
+		padding.PKCS1v15(),
+		hashes.SHA1()
 	)
 	firma_64 = base64.b64encode(signature)
 	firma = firma_64.decode('ascii')
@@ -150,11 +147,8 @@ def verify_sign(public_key,operation,firma):
 		public_key.verify(
 			firma,
 			operation,
-			padding.PSS(
-				mgf=padding.MGF1(hashes.SHA256()),
-				salt_length=padding.PSS.MAX_LENGTH
-			),
-			hashes.SHA256()
+			padding.PKCS1v15(),
+			hashes.SHA1()
 		)
 		return 0
 	except:
@@ -173,25 +167,19 @@ def verify_bill(path):
 	firma_bytes = base64.b64decode(firma_b64)
 
 	if verify_sign(cert_banki.public_key(),bytes(data["mensaje"], 'ascii'),firma_bytes) == -1:
+		print("No verifico el recibo")
 		return -1
 	
-	print(cert_chain[0].public_key())
-	return 0
+	if verify_sign(cert_chain[0].public_key(), cert_banki.tbs_certificate_bytes, cert_banki.signature) == -1:
+		print("No verifico Banki")
+		return -1
 	
-	if verify_sign(cert_chain[0].public_key(),cert_banki.tbs_certificate_bytes, cert_banki.signature) == -1:
-		print("No verifico el certificado de Banki")
-		#return -1
-	
-	if verify_sign(cert_chain[0].public_key(),cert_chain[0].tbs_certificate_bytes, cert_chain[0].signature) == -1:
+	if verify_sign(cert_chain[0].public_key(), cert_chain[0].tbs_certificate_bytes, cert_chain[0].signature) == -1:
 		print("No verifico la raiz")
 		return -1
 	return 0
 
-
-
-
-
-
+"""
 	return 0 
 	indice = 0;
 	cert = cert_banki
@@ -209,4 +197,4 @@ def verify_bill(path):
 		else: 
 			cert = cert_next
 			indice += 1
-			cert_next = cert_chain[indice]
+			cert_next = cert_chain[indice]"""
