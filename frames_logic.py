@@ -1,5 +1,6 @@
 """Fichero que lleva la lógica de la aplicación"""
 import tkinter as tk
+from tkinter import filedialog
 import sqlite3 as sql
 from datetime import datetime
 import os
@@ -168,7 +169,6 @@ def record_to_app(event):
 	return
 
 """Funciones que contienen la lógica de la base de datos y las op"""
-
 def try_to_log_in(event):
 	"""Funciónb que se encarga de gestionar el log in"""
 	#Se obtienen los datos de las entry
@@ -267,12 +267,6 @@ def try_to_sign_up(event):
 	window.after(randint(500,1500), loading_to_app)
 	return
 
-def try_to_sign_element(event):
-	indice = listbox_record.curselection()
-	if (len(indice) != 0):
-		firmar(listbox_record.get(indice[0]))
-	return
-
 def calculate_balance():
 	"""Función que sirve para dibujar el balance"""
 	#Obtiene el balance encriptado
@@ -355,6 +349,19 @@ def insert_deposit_withdraw(event):
 	con.commit()
 	deposit_withdraw_to_app(event)
 
+"""Funciones relacionadas con la criptografía"""
+def try_to_sign_element(event):
+	indice = listbox_record.curselection()
+	if (len(indice) != 0):
+		firmar(listbox_record.get(indice[0]))
+	return
+
+def abrir_explorador(event):
+	archivo_seleccionado = filedialog.askopenfilename(
+		title = "Elige el archivo a verificar",
+		filetypes=[("Archivos pem", ".pem")]
+	)
+	return
 
 """Bindeo de botones a las funciones"""
 # Frames log in
@@ -379,5 +386,7 @@ return_deposit_withdraw.bind("<Button-1>",deposit_withdraw_to_app)
 # Frames record
 record_close_button.bind("<Button-1>",record_to_app)
 record_sign_button.bind("<Button-1>", try_to_sign_element)
+record_verify_button.bind("<Button-1>", abrir_explorador)
+
 #Mainloop
 tk.mainloop()

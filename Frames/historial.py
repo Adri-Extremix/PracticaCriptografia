@@ -32,8 +32,19 @@ record_sign_button = tk.Button(
 
 record_sign_button.place(x=90, y=130)
 
-listbox_record = tk.Listbox()
+record_verify_button = tk.Button(
+	master=frm_record,
+	text="Verificar",
+	width=10,
+	height=2,
+	bg="white",
+	fg="blue",
+)
 
+
+record_verify_button.place(x=270, y=130)
+
+listbox_record = tk.Listbox()
 scroll_record = ttk.Scrollbar(master=frm_record, orient=tk.VERTICAL)
 listbox_record = tk.Listbox(master=frm_record, yscrollcommand=scroll_record.set, width=450, height = 150)
 scroll_record.config(command=listbox_record.yview)
