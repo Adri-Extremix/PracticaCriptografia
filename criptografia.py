@@ -122,27 +122,45 @@ def get_serialized_key(path,pwd=None):
 	return private_key
     
 def firmar(operacion, id, usuario, pass_firma):
-	private_key = get_serialized_key("PKI1/Banki/BankiKey.pem",pass_firma)
+	private_key = get_serialized_key("PKI/Banki/Akey.pem",pass_firma)
 	operacion = usuario + " - " + operacion 
 	op_bytes = bytes(operacion, 'ascii')
 	signature = private_key.sign(
 		op_bytes,
-		padding.PKCS1v15(),
-		hashes.SHA1()
+		padding.PSS(
+		    mgf=padding.MGF1(hashes.SHA256()),
+		    salt_length=padding.PSS.MAX_LENGTH
+		),
+		hashes.SHA256()
 	)
 	firma_64 = base64.b64encode(signature)
 	firma = firma_64.decode('ascii')
-	with open("recibos/operacion-" + id + ".json", "w", encoding='ascii') as file:
+	with open("recibos/operacion-" + usuario + "-" + id + ".json", "w", encoding='ascii') as file:
 		message = {
 			"mensaje": operacion,
             "firma": firma,
-			"certificado": "PKI1/Banki/BankiCert.pem",
-			"cadena_certificacion": "PKI1/Banki/certs.pem" 
+			"certificado": "PKI/Banki/Acert.pem",
+			"cadena_certificacion": "PKI/Banki/certs.pem" 
         }
-		json.dump(message, file)
+		json.dump(message, file, indent=4)
+
+def verify_sign_SHA256(public_key,operation,firma):
+	try:	
+		public_key.verify(
+			firma,
+			operation,
+			padding.PSS(
+			    mgf=padding.MGF1(hashes.SHA256()),
+			    salt_length=padding.PSS.MAX_LENGTH
+			),
+			hashes.SHA256()
+		)
+		return 0
+	except:
+		return -1
 
 
-def verify_sign(public_key,operation,firma):
+def verify_sign_SHA1(public_key,operation,firma):
 	try:	
 		public_key.verify(
 			firma,
@@ -155,46 +173,37 @@ def verify_sign(public_key,operation,firma):
 		return -1
 
 def verify_bill(path):
-	with open(path,"rb") as file:
-		data = json.load(file)
-	with open(data["certificado"],"rb") as file:
-		cert_banki = x509.load_pem_x509_certificate(file.read())
-	with open(data["cadena_certificacion"],"rb") as file:
-		cert_chain = x509.load_pem_x509_certificates(file.read())
-	
+    try:
+        with open(path,"rb") as file:
+            data = json.load(file)
+        with open(data["certificado"],"rb") as file:
+            cert_banki = x509.load_pem_x509_certificate(file.read())
+        with open(data["cadena_certificacion"],"rb") as file:
+            cert_chain = x509.load_pem_x509_certificates(file.read())
+    except:
+	    return -1
 
-	firma_b64 = bytes((data["firma"]), 'ascii')
-	firma_bytes = base64.b64decode(firma_b64)
-
-	if verify_sign(cert_banki.public_key(),bytes(data["mensaje"], 'ascii'),firma_bytes) == -1:
-		print("No verifico el recibo")
-		return -1
-	
-	if verify_sign(cert_chain[0].public_key(), cert_banki.tbs_certificate_bytes, cert_banki.signature) == -1:
-		print("No verifico Banki")
-		return -1
-	
-	if verify_sign(cert_chain[0].public_key(), cert_chain[0].tbs_certificate_bytes, cert_chain[0].signature) == -1:
-		print("No verifico la raiz")
-		return -1
-	return 0
-
-"""
-	return 0 
-	indice = 0;
-	cert = cert_banki
-	print(cert.public_key())
-	cert_next = cert_chain[indice]
-	print(cert_next.public_key())
-	while (1):
-		if verify_sign(cert_next.public_key(), cert.tbs_certificate_bytes, cert.signature) == -1:
-			print(indice)
-			return -1
-		if (cert.issuer == cert.subject):
-			return 0
-		if (cert_next.issuer == cert_next.subject):
-			cert = cert_next
-		else: 
-			cert = cert_next
-			indice += 1
-			cert_next = cert_chain[indice]"""
+    try:
+        firma_b64 = bytes((data["firma"]), 'ascii')
+        firma_bytes = base64.b64decode(firma_b64)
+    except: 
+	    return -1
+	    
+    if verify_sign_SHA256(cert_banki.public_key(),bytes(data["mensaje"], 'ascii'),firma_bytes) == -1:
+	    print("No verifico el recibo")
+	    return -1
+    
+    indice = 0;
+    cert = cert_banki
+    cert_next = cert_chain[indice]
+    while (1):
+        if verify_sign_SHA1(cert_next.public_key(), cert.tbs_certificate_bytes, cert.signature) == -1:
+            return -1
+        if (cert.issuer == cert.subject):
+            return 0
+        if (cert_next.issuer == cert_next.subject):
+            cert = cert_next
+        else: 
+            cert = cert_next
+            indice += 1
+            cert_next = cert_chain[indice]

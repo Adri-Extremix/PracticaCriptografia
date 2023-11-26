@@ -364,8 +364,26 @@ def abrir_explorador(event):
 		title = "Elige el archivo a verificar",
 		filetypes=[("Archivos json", ".json")]
 	)
-	print(verify_bill(archivo_seleccionado))
+	if (None == archivo_seleccionado):
+		return
+	if verify_bill(archivo_seleccionado) == 0:
+		verified_signature()
+	else:
+		not_verified_signature()
 	return 
+
+def verified_signature():
+	record_verify_label.config(text="\u2713", fg="green")
+	record_verify_label.place(x=400,y=130)
+	window.after(2000, delete_mssg, record_verify_label)
+	return
+	
+def not_verified_signature():
+	record_verify_label.config(text="x", fg="red")
+	record_verify_label.place(x=400, y=130)
+	window.after(2000, delete_mssg, record_verify_label)
+	return
+	
 
 """Bindeo de botones a las funciones"""
 # Frames log in
