@@ -352,7 +352,9 @@ def insert_deposit_withdraw(event):
 
 """Funciones relacionadas con la criptografía"""
 def try_to_sign_element(event):
+	"""Función que se encarga de intentar firmar un elemento"""
 	indice = listbox_record.curselection()
+	#Si la selección no es vacía, llama a la función de firmar pasándole los datos adecuados
 	if (len(indice) != 0):
 		op = listbox_record.get(indice[0])
 		index = op.index(':')
@@ -360,25 +362,31 @@ def try_to_sign_element(event):
 	return
 
 def abrir_explorador(event):
+	"""Función que se encarga de abrir el explorados de archivos"""
 	archivo_seleccionado = filedialog.askopenfilename(
 		title = "Elige el archivo a verificar",
 		filetypes=[("Archivos json", ".json")]
 	)
+	#Si no ha seleccionado nada
 	if (None == archivo_seleccionado):
 		return
+	#Si la verificación del fichero es correcta
 	if verify_bill(archivo_seleccionado) == 0:
 		verified_signature()
+	#Si la verificación del fichero no es correcta
 	else:
 		not_verified_signature()
 	return 
 
 def verified_signature():
+	"""Función que dibuja el mensaje cuando la firma es verificada"""
 	record_verify_label.config(text="\u2713", fg="green")
 	record_verify_label.place(x=400,y=130)
 	window.after(2000, delete_mssg, record_verify_label)
 	return
 	
 def not_verified_signature():
+	"""Función que dibuja el mensaje cuando la firma no es válida"""
 	record_verify_label.config(text="x", fg="red")
 	record_verify_label.place(x=400, y=130)
 	window.after(2000, delete_mssg, record_verify_label)
