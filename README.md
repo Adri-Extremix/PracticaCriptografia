@@ -4,5 +4,5 @@ A basic bank app made in Python with criptography algorithms to protect the data
 
 ## Authors:
 
-- Adrián Fernández Galán
-- Manuel Gómez-Plana Rodríguez
+- [Adrián Fernández Galán](https://github.com/Adri-Extremix)
+- [Manuel Gómez-Plana Rodríguez](https://github.com/ManuGPR)
